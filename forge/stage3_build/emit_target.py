@@ -161,24 +161,26 @@ def run_bounded(
 ) -> subprocess.CompletedProcess:
     env = _bounded_env(declared_env)
     try:
-        proc = subprocess.run(
-            argv,
-            cwd=cwd,
-            env=env,
-            timeout=timeout,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
+        # Spool child output to temporary files: PIPE capture buffers the entire
+        # stream before returning, so trimming it afterwards does not bound RAM.
+        # This bounds capture memory, not temporary disk usage or plugin access.
+        with tempfile.TemporaryFile() as stdout, tempfile.TemporaryFile() as stderr:
+            proc = subprocess.run(
+                argv,
+                cwd=cwd,
+                env=env,
+                timeout=timeout,
+                stdout=stdout,
+                stderr=stderr,
+            )
+            stdout.seek(0)
+            stderr.seek(0)
+            proc.stdout = stdout.read(MAX_STDOUT_BYTES)
+            proc.stderr = stderr.read(MAX_STDERR_BYTES)
     except subprocess.TimeoutExpired as exc:
         raise EmitTargetError(f"target {target_kind!r} timed out after {timeout}s") from exc
     except (FileNotFoundError, PermissionError) as exc:
         raise EmitTargetError(f"target {target_kind!r}: could not spawn its command: {exc}") from exc
-    # subprocess.CompletedProcess is an ordinary mutable object (not a namedtuple); capping its
-    # captured output in place is the bound (D6: 1 MiB stdout / 64 KiB stderr).
-    if len(proc.stdout) > MAX_STDOUT_BYTES:
-        proc.stdout = proc.stdout[:MAX_STDOUT_BYTES]
-    if len(proc.stderr) > MAX_STDERR_BYTES:
-        proc.stderr = proc.stderr[:MAX_STDERR_BYTES]
     return proc
 
 
