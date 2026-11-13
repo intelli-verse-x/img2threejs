@@ -7,14 +7,128 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+**The Character Split — targets v2.1.** The base `character` domain joins
+`plugin-character`, so the base names no domain and the v2.0 plugin split closes.
+
+- The in-repo `character` domain is removed; `plugin-character` (already serving
+  `animated-character`) carries the full character workflow — anatomy, hair, materials, Stage R
+  rig and animation.
+- The seam is hardened: pass-id enforcement at the validation site, the inbound base-to-plugin
+  import is broken, and the contract gains a clause forbidding the base from importing plugin
+  code.
+- Acceptance rule: the character build keeps emitting the same Three.js output for the same
+  input across the move. The partition of every character/rig-named line as base mechanism or
+  domain content is written down *before* any file moves.
+
+## [2.0.1] — 2026-11-05
+
+Ships the `SKILL.md` guidance that landed on `main` after v2.0.0, so that `npx img2threejs install`
+(which now follows the latest GitHub release, #186) gives existing users a skill that can route to
+plugins. `forge/` and `grimoire/` are unchanged since v2.0.0.
+
+- Profile preflight: pick a profile from what the image shows, list available profiles, and never
+  fall back to `generic` silently; give the user the plugin install commands and wait.
+- Document the `img2` harness: install, diagnose, and resolve plugins.
+- Release notes are generated from v2.0.0 (`previous-governed-tag`), not v1.4.3.
+
+## npm CLI 0.2.0 — 2026-11-05
+
+- `docs/INSTALL.md` §4 is now "Update an existing install": a one-line prompt the user pastes, and
+  a procedure for the agent that maps each `doctor` state (managed, dangling link, own clone,
+  copied folder) and each exit code to one action, and stops instead of moving anything itself.
+- Without `--ref`, `install` and `update` resolve the latest GitHub Release
+  (`/releases/latest` redirect) instead of a pinned `v2.0.0`. A tag counts only once the
+  governed release workflow has published its Release; prerelease, SHA and branch targets
+  from the redirect are refused (exit 1). `--ref` behaves as before.
+- `update` reports `already up to date` when the host already links the resolved commit.
+- A beta install ahead of the latest stable release is left alone (exit 0) instead of
+  failing with "refusing downgrade". Plain `install` without `--ref` no longer downgrades
+  a beta install either (0.1.1 silently replaced it with the pinned stable).
+- Known limit: Node's `fetch` ignores `HTTPS_PROXY`, so behind a proxy the latest-release
+  lookup fails (exit 1); pass `--ref <tag>`, which only uses Git.
+- A dangling host link is replaced and reported. An unmanaged link to an `img2threejs`
+  checkout now names `git -C <path> pull --ff-only` or moving the link as the way forward.
+- `version` reports `default skill ref: latest GitHub release`; `--dry-run` stays offline.
+- Help notes that Windows is not supported yet.
+
+## npm CLI 0.1.1 — 2026-10-07
+
+- Add tag-driven trusted publishing for independent `cli-vX.Y.Z` CLI releases.
+- Publish the tested installer tarball from GitHub Actions without a stored npm write
+  token; keep skill `vX.Y.Z` releases and the default skill `v2.0.0` independent.
+- Document npx/global npm installation and the npm trusted publisher configuration.
+
+## npm CLI 0.1.0 — 2026-10-07
+
+Published [`img2threejs@0.1.0`](https://www.npmjs.com/package/img2threejs) to the public
+npm registry with the `latest` tag. CLI versions are independent of skill releases;
+the default installed skill remains `v2.0.0`.
+
+- Install the base skill directly from a pinned GitHub tag or commit instead of invoking
+  the unpublished `img2` npm package and its plugin-only `add` command.
+- Honor `--host` for Hermes, Claude Code, Codex, and OpenCode; share one managed checkout
+  per commit and preserve manual installs, unrelated symlinks, and locally edited releases.
+- Make `--dry-run` offline and side-effect-free, and enforce skill-version downgrade
+  rejection in `update`, including SHA refs and prerelease precedence.
+- Replace source-text self-tests with isolated real-Git installation/update regressions;
+  exclude the test runner from the published tarball and validate the CLI in CI.
+
+## [2.0.0] — 2026-09-05
+
+**The Plugin Update.** The plugin ecosystem — domain registry, img2 harness, plugin-served
+domains — ships as its own major, pulled forward from the original Procedural World bundle.
+
+### Changed — BREAKING
+
+- **`cs2` is served by the installed `plugin-cs2`** (`img2 add img2threejs/plugin-cs2`, requires
+  harness >= 0.2.1). The in-repo domain module is removed; without the plugin the profile fails loud
+  naming what is available, and an in-flight workspace is refused while the provider is absent,
+  resuming unchanged on reinstall. Domain coherence is still enforced by the base's
+  `validate_cs2_contract`; the plugin ships its own blocking `cs2-review` gate.
+
+- **`animated-character` is served by the installed plugin-character** (`img2 add
+  img2threejs/plugin-character`, requires harness >= 0.2.3). The in-repo domain module is removed;
+  without the plugin the profile fails loud naming what is available, and an in-flight workspace is
+  refused while the provider is absent, resuming unchanged on reinstall. Persisted checklists do NOT
+  migrate: a workspace initialized before the switch keeps base `forge/stage5_rig/...` commands and
+  runs the base library copies -- re-init to adopt the plugin's steps. Gate participation is now
+  rig-aware: a domain declaring `rigSteps` is not due until its rig track begins, so the plugin-gates
+  sweep no longer fires a rig gate one phase early. `state.py` degrades to generic-only profile
+  choices when the registry itself is broken instead of dying for every profile.
+
+- **A domain is no longer inferred from the target's name.** `detect_cs2_intent` and its 17-keyword
+  table (including bare `"fade"` and `"karambit"`) are removed, so a target called
+  `"AK-47 | Redline"` or `"Karambit Doppler"` no longer identifies itself as CS2 — it resolves to the
+  generic `core_3d` evidence collection like any other object. Declare the domain instead; `--cs2`
+  and `--profile cs2` are unchanged. Name similarity is not a legitimate resolution input
+  (`PLUGIN_CONTRACT.md` §13), and the old heuristic silently applied CS2's quality floors and
+  evidence collection to anything whose name happened to contain one of those words.
+- The local-spec-search collection now defaults to `core_3d` rather than `cs2`. That step runs on
+  every profile, so every generic run was previously searching a domain corpus by default.
+- `objectClass.cs2: true` is replaced by `objectClass.domain: "<id>"`. Specs authored before this
+  change carry the old field.
+- `weapon-v1.4` no longer requires a CS2 marker to pass strict validation. It is the weapon *shape*
+  template, keyed by classified kind, and CS2 is a finish/material domain riding the generic
+  hard-surface path — so requiring the marker meant a plain sword could pass only by being labelled a
+  CS2 skin. Domain coherence is still enforced by `validate_cs2_contract`.
+
+### Added
+
+- `forge/_shared/domains/` — a domain registry. Each module declares one `DOMAIN` mapping
+  contributing checklist steps, a splice anchor, and an evidence collection; registration is by
+  presence, so the base pipeline holds no list of domain names. `--profile` choices derive from it,
+  and an unregistered profile fails loud naming what is available instead of quietly running as
+  generic. `workflow_state.py` and `forge/state.py` now contain no domain name at all.
+
 **Theme: rigging may only ADD.** The 1.5.2 modules existed and nothing ever ran them; animation
 broke meshes because no step in the workflow forbade it and no gate could tell a rigged mesh from a
 damaged one. This closes the loop between the gates and the pipeline that is supposed to enforce them.
 
-### Added
+### Added (rigging and animation workflow, merged from main)
 
-- **`animated-character` workflow profile** (`forge/_shared/workflow_state.py` `RIG_STEPS`,
-  `forge/state.py`). Nine Stage R steps join the checklist: read the contract, read the rig from the
+- **`animated-character` workflow profile** (now `forge/_shared/domains/animated_character.py` --
+  ported from the hardcoded `RIG_STEPS` into the domain registry when this branch merged v1.5.2;
+  the registry gained a `rigSteps` key, appended after the FINAL steps). Nine Stage R steps join the checklist: read the contract, read the rig from the
   GLB, repair the mesh, freeze it, validate the payload, bind, verify parity, measure the clips, run
   the gates. Every `forge/stage5_rig/` module was callable before this and nothing in the workflow
   ever told anyone to call one — `next.py` walks the checklist, so a gate absent from the checklist
@@ -63,6 +177,11 @@ damaged one. This closes the loop between the gates and the pipeline that is sup
   target technical nodes.** The rule stands — it is what keeps the skin's index space intact — but
   it is now stated as the risk it guards against rather than as an observation, and
   `deformVsTechnical` reports the real count per asset.
+
+### Known limits at this release
+
+- The base skill still names the `character` domain (`forge/_shared/domains/character.py`).
+  Full extraction — anatomy, hair, materials — lands in v2.1 and closes the v2.0 split.
 
 ## [1.5.2] — 2026-08-25
 
