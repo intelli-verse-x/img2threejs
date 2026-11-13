@@ -376,6 +376,11 @@ def _run_plugin_target(target: Target, *, spec_path: Path, workspace: Path) -> i
     # ".img2/artifacts/<plugin-id>/" prefix (that is exactly what path_escapes just re-checked) --
     # it is not a bare filename to be joined under that prefix a second time.
     artifact_path = (workspace / target.artifact_path).resolve()
+    allowed_root = workspace.resolve() / ".img2" / "artifacts" / target.plugin_id
+    if not artifact_path.is_relative_to(allowed_root):
+        raise EmitTargetError(
+            f"target {target.kind!r}: resolved artifact path escapes allowed artifact directory"
+        )
     argv = _substitute(target.command, workspace=workspace, spec=spec_path, plugin_dir=target.plugin_dir)
     timeout = _resolve_timeout(target)
     spec_hash = _sha256_file(spec_path)
